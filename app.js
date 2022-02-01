@@ -4,8 +4,10 @@ const app = express();
 const path = require("path");
 const sqlite3 = require("sqlite3");
 const { open } = require("sqlite");
+const cors = require("cors");
 const dbPath = path.join(__dirname, "todoApplication.db");
 app.use(express.json());
+app.use(cors());
 
 let db = null;
 
