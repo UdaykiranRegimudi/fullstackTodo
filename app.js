@@ -1,20 +1,22 @@
 const express = require("express");
+const { open } = require("sqlite");
+const sqlite3 = require("sqlite3");
+const path = require("path");
+const cors = require("cors");
+
+const databasePath = path.join(__dirname, "todoApplication.db");
 
 const app = express();
-const path = require("path");
-const sqlite3 = require("sqlite3");
-const { open } = require("sqlite");
-const cors = require("cors");
-const dbPath = path.join(__dirname, "todoApplication.db");
+
 app.use(express.json());
 app.use(cors());
 
-let db = null;
+let database = null;
 
 const initializeDbAndServer = async () => {
   try {
-    db = await open({
-      filename: dbPath,
+    database = await open({
+      filename: databasePath,
       driver: sqlite3.Database,
     });
 
@@ -30,15 +32,20 @@ const initializeDbAndServer = async () => {
 initializeDbAndServer();
 
 app.get("/todos/", async (request, response) => {
-  const getAllTodos = `select * from todo`;
-  const data = await db.all(getAllTodos);
+  let data = null;
+  const getTodosQuery = `select * from todo`;
+  data = await database.all(getTodosQuery);
   response.send(data);
 });
 
 app.post("/todos/", async (request, response) => {
   const { id, todo, isChecked } = request.body;
-  const postTodo = `insert into todo(id,todo,isChecked) values(${id},'${todo}','${isChecked}')`;
-  await db.run(postTodo);
+  const postTodoQuery = `
+  INSERT INTO
+    todo
+  VALUES
+    (${id}, '${todo}', '${isChecked}');`;
+  await database.run(postTodoQuery);
   const success = {
     status: 200,
     message: "Todo Successfully Added",
@@ -48,11 +55,18 @@ app.post("/todos/", async (request, response) => {
 
 app.delete("/todos/:todoId/", async (request, response) => {
   const { todoId } = request.params;
-  const deleteTodo = `delete from todo where id = ${todoId}`;
-  await db.run(deleteTodo);
+  const deleteTodoQuery = `
+  DELETE FROM
+    todo
+  WHERE
+    id = ${todoId};`;
+
+  await database.run(deleteTodoQuery);
   const success = {
     status: 200,
     message: "Todo Successfully Deleted",
   };
   response.send(success);
 });
+
+module.exports = app;
